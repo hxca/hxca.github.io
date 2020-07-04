@@ -122,9 +122,9 @@ scheme: Muse
 menu:
   home: / || home
   archives: /archives/ || archive
+  categories: /categories/ || th
   tags: /tags/ || tags
   about: /about/ || user
-  #categories: /categories/ || th
   #schedule: /schedule/ || calendar
   #sitemap: /sitemap.xml || sitemap
   #commonweal: /404/ || heartbeat
@@ -167,7 +167,7 @@ sidebar:
 # Sidebar Avatar
 avatar:
   # Replace the default image and set the url here.
-  url: /images/avatar.gif
+  url: https://wx1.sbimg.cn/2020/05/11/avatar.jpg
   # If true, the avatar will be dispalyed in circle.
   rounded: true
   # If true, the avatar will be rotated with the cursor.
