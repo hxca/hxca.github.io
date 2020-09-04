@@ -198,7 +198,7 @@ links_settings:
   layout: block
 
 links:
-  #Title: http://yoursite.com
+  Stephen Blog: https://vinming.github.io
 
 # Table of Contents in the Sidebar
 # Front-matter variable (unsupport wrap expand_all).
