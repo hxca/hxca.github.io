@@ -21,7 +21,7 @@ date: 2020-02-18 13:27:24
 <!-- more -->
 
 ## Debian 系统配置
-开始进入正题。我这里使用 Vmware 虚拟 4 个 Debian 系统，一个 master ，三个 solver 来搭建完全式分布式集群。hostname 分别是**master、solver1、solver2、solver3**。注意下面的JDK和hadoop安装配置操作都是使用 **hadoop 用户权限**来执行，并非 root 权限。
+开始进入正题。我这里使用 Vmware 虚拟 4 个 Debian 系统，一个 master ，三个 solver 来搭建完全式分布式集群。hostname 分别是**master、solver1、solver2、solver3**。注意下面的 JDK 和hadoop 安装配置操作都是使用 **hadoop 用户权限**来执行，并非 root 权限。
 
 
 ### 静态网络的配置
@@ -178,7 +178,7 @@ $ source /etc/profile
 Hadoop 的配置文件都在 `etc/hadoop/` 文件夹下，分别编辑  `hadoop-env.sh` ，`workers`  ， `core-site.xml ` ， `hdfs-site.xml`， `mapred-site.xml` ， `yarn-site.xml`
 
 `hadoop-env.sh`
-由于远程调用 `${java_home}` 时，通常出现找不到jdk变量。所以需要手动配置hadoop的jdk环境变量。编辑 `hadoop-env.sh` 文件，并输入内容。
+由于远程调用 `${java_home}` 时，通常出现找不到 jdk 变量。所以需要手动配置 hadoop 的 jdk 环境变量。编辑 `hadoop-env.sh` 文件，并输入内容。
 ```
 export JAVA_HOME=/usr/lib/jvm/jdk
 ```
@@ -284,7 +284,7 @@ solver3
 
 
 
-***把 `/opt/hadoop-3.1.2` 和 `hadoop.sh` 打包 scp 到每台电脑上，然后配置 Hadoop 环境变量和创建 `/opt/hadoop` 指向 `/opt/hadoop-3.1.2`***
+***把 `/opt/hadoop-3.1.2` 和 `hadoop.sh` 打包 scp 到每台电脑上，然后配置 Hadoop 环境变量和创建软链接 `/opt/hadoop` 指向 `/opt/hadoop-3.1.2`***
 
 ##  Hadoop 的验证
 
@@ -340,7 +340,7 @@ $ jps
 13341 ResourceManager
 ```
 
-如果输入 `jps` 后，有 `SecondaryNameNode` ， `Jps` ， `JobHistoryServer` ， `NameNode` ， `ResourceManager` 相关信息输出，那么说明Hadoop启动成功。
+如果输入 `jps` 后，有 `SecondaryNameNode` ， `Jps` ， `JobHistoryServer` ， `NameNode` ， `ResourceManager` 相关信息输出，那么说明 Hadoop 启动成功。
 
 
 ### Hadoop Web UI 访问
@@ -350,4 +350,5 @@ $ jps
 | NameNode 						| https://192.168.20.101:9870 	| Default HTTP port is 9870. 	|
 | Resourcemanager 				| http://192.168.20.101:8088 	| Default HTTP port is 8088. 	|
 | MapReduce JobHistory Server 	| http://192.168.20.101:19888 	| Default HTTP port is 19888. 	|
+
 

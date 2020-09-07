@@ -12,7 +12,7 @@ date: 2020-02-20 14:10:58
 ---
 
 ## 前言
-由于疫情的缘故，公司决定分一部分员工上班，一部分员工在家工作。而我的上级领导安排我们两人一组共两组轮流上班，实际上我们组就我一个人，也就是说我是一个人值班。不过话又说回来，这样隔天上班的方式，今天在公司写代码，明天在家写代码。代码复制来复制去的，相当麻烦。本来打算托管在 GitHub 上面的，奈何访问速度实在是感人，遂放弃。而至于国内的代码托管平台，访问速度虽然很快，但是对其印象不好，也不考虑了。后来想了想，我自己家庭网路就有公网 IP 地址，还有动态域名。所以干脆在自己的 OpenWrt 上面部署 Git 服务。
+由于疫情的缘故，公司决定分一部分员工上班，一部分员工在家工作。而我的上级领导安排我们两人一组共两组轮流上班，实际上我们组就我一个人，也就是说我是一个人值班。不过话又说回来，这样隔天上班的方式，今天在公司写代码，明天在家写代码。代码复制来复制去的，相当麻烦。本来打算托管在 GitHub 上面的，奈何访问速度实在是感人，遂放弃。而至于国内的代码托管平台，访问速度虽然很快，但是对其印象不好，所以也不考虑了。后来想了想，我自己家庭网路就有公网 IP 地址，还有动态域名。所以干脆在自己的 OpenWrt 上面部署 Git 服务。
 
 <!-- more -->
 
@@ -36,7 +36,7 @@ date: 2020-02-20 14:10:58
 | `/etc/shadow` |　	User account information |
 | `/etc/group`  |　	Defines the groups to which users belong |
 
-***来自 ArchWiki***
+***来自 [ArchWiki - Users and groups](!https://wiki.archlinux.org/index.php/Users_and_groups#File_list)***
 
 好了，不说那么多了，开始动手吧。首先修改 `/etc/passwd` ， 在文本末尾添加
 ```
@@ -68,16 +68,16 @@ git:x:700:git
 # cat "XXXXXX" >> .ssh/authorizd_keys
 ```
 
-这里我们用的是其他用户创建的，所以修改 authorized_keys 和 .ssh 拥有者为 git 。
+这里我们用的是其他用户创建的，所以修改 `authorized_keys` 和 `.ssh` 拥有者为 `git`	 。
 ```shell
 # chown -R git:git .ssh
 ```
 
 ## 使用问题
-### 关于使用非22端口 git clone 项目
-Git 默认使用ssh的端口，而ssh默认端口是22。也就是说，Git 使用的是 22 端口。在默认情况下，在服务端使用 `git init --bare xxx.git` 新建仓库后，就可以在本地端使用 `git clone git@ip:/path/xxx.git` 复制仓库了。但是如果 ssh 设定了非 22 端口，只能这样使用 `git clone` 了。
+### 关于使用非 22 端口 git clone 项目
+Git 默认使用 ssh 的端口，而 ssh 默认端口是22。也就是说，Git 使用的是 22 端口。在默认情况下，在服务端使用 `git init --bare xxx.git` 新建仓库后，就可以在本地端使用 `git clone git@ip:/path/xxx.git` 复制仓库了。但是如果 ssh 设定了非 22 端口，只能这样使用 `git clone` 了
 ```shell
-$ git clone ssh://git@hostname:port/.../xxx.git
+$ git clone ssh://git@hostname:port/.../xxx.git	# port 为 ssh 端口
 ```
 
 例如：
@@ -86,7 +86,9 @@ $ git clone ssh://git@10.137.20.113:2222/root/test.git   # 2222 是 ssh 端口
 ```
 
 ### 关于新建仓库问题
-由于 git 用户不能用 bash shell 登录，所以创建仓库时，需要用其他账号 ssh 上去，然后执行 `git init --bare xxx.git` 。但由于用其他账号创建的仓库所有不属于 git 用户所有。所以，又要使用 `chown -R git:git xxx.git` 来修改拥有者权限。而且每次创建仓库都要执行这条命令。相当地麻烦。于是我写了个脚本，用来执行这两条命令。并且当执行 `XXX aab bbc` 时，同时创建 `aab` `bbc` 两个仓库，这样节省了不少事。好了不多说，直接上脚本吧。
+
+由于 git 用户不能用 bash shell 登录，所以创建仓库时，需要用其他账号 ssh 上去，然后执行 `git init --bare xxx.git` 。但由于用其他账号创建的仓库所有不属于 git 用户所有。所以，又要使用 `chown -R git:git xxx.git` 来修改拥有者权限。而且每次创建仓库都要执行这条命令。相当地麻烦。于是我写了个脚本，用来执行这两条命令。并且当执行 `newrepo aab bbc` 时，同时创建 `aab` `bbc` 两个仓库，这样节省了不少事。好了不多说，直接上脚本吧。
+
 ```shell
 #!/bin/bash
 
@@ -112,3 +114,4 @@ done
 1. [Users and groups - ArchWiki](https://wiki.archlinux.org/index.php/users_and_groups)
 2. [Git on the Server - Setting Up the Server](https://git-scm.com/book/en/v2/Git-on-the-Server-Setting-Up-the-Server)
 3. [处理 git clone 命令的非标准SSH端口连接](https://nanxiao.me/git-clone-ssh-non-22-port/)
+
