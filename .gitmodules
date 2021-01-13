@@ -1,0 +1,12 @@
+[submodule "source"]
+	path = source
+	url = git@github.com:hxca/hxca.github.io.git
+	branch = source
+[submodule "images"]
+	path = images
+	url = git@github.com:hxca/hxca.github.io.git
+	branch = images
+[submodule "themes/next"]
+	path = themes/next
+	url = git@github.com:hxca/hxca.github.io.git
+	branch = themes-next
