@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/css/main.css">
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanjunyu.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"right","width":260,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言动态链接库（ so 的全称为 Shared Object，因此也称共享库）在 Linux 下用 C\C++ 经常碰到。当多个程序使用同一个动态链接库时，既能将代码复用，又能节约可执行文件的大小，而且还能减少运行时的内存占用。不仅如此，除了能给 C\C++ 调用，动态链接库还能给其他编程语言调用，比如 Python，简直完美。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux C 动态链接库的生成与使用">
+<meta property="og:url" content="https://fanjunyu.com/posts/62d7ab61/index.html">
+<meta property="og:site_name" content="Junyu Fan">
+<meta property="og:description" content="前言动态链接库（ so 的全称为 Shared Object，因此也称共享库）在 Linux 下用 C\C++ 经常碰到。当多个程序使用同一个动态链接库时，既能将代码复用，又能节约可执行文件的大小，而且还能减少运行时的内存占用。不仅如此，除了能给 C\C++ 调用，动态链接库还能给其他编程语言调用，比如 Python，简直完美。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-09-07T04:38:35.000Z">
+<meta property="article:modified_time" content="2021-01-13T23:02:05.589Z">
+<meta property="article:author" content="Junyu Fan">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="C\C++">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanjunyu.com/posts/62d7ab61/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Linux C 动态链接库的生成与使用 | Junyu Fan</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Junyu Fan</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://fanjunyu.com/posts/62d7ab61/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Junyu Fan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junyu Fan">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Linux C 动态链接库的生成与使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-09-07 12:38:35" itemprop="dateCreated datePublished" datetime="2020-09-07T12:38:35+08:00">2020-09-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-14 07:02:05" itemprop="dateModified" datetime="2021-01-14T07:02:05+08:00">2021-01-14</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" itemprop="url" rel="index"><span itemprop="name">学习笔记</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/C-C/" itemprop="url" rel="index"><span itemprop="name">C\C++</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/posts/62d7ab61/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="posts/62d7ab61/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>动态链接库（ <code>so</code> 的全称为 Shared Object，因此也称共享库）在 Linux 下用 C\C++ 经常碰到。当多个程序使用同一个动态链接库时，既能将代码复用，又能节约可执行文件的大小，而且还能减少运行时的内存占用。不仅如此，除了能给 C\C++ 调用，动态链接库还能给其他编程语言调用，比如 Python，简直完美。</p>
+<a id="more"></a>
+
+<h2 id="编写动态链接库源文件"><a href="#编写动态链接库源文件" class="headerlink" title="编写动态链接库源文件"></a>编写动态链接库源文件</h2><p>首先来编写动态链接库源文件。新建 <code>myfunc.c</code>，并添加两个函数，一个是 <code>say_hello</code> ，另一个是 <code>cal_sum</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;myfunc.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">say_hello</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;hello world\n&quot;</span>);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">cal_sum</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> x + y;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>为 <code>myfunc.c</code> 编写头文件 <code>myfunc.h</code></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">ifndef</span> __MYFUNC_H</span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">define</span> __MYFUNC_H</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">void</span> <span class="title">say_hello</span><span class="params">()</span></span>;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">cal_sum</span><span class="params">(<span class="keyword">int</span> x, <span class="keyword">int</span> y)</span></span>;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="meta-keyword">endif</span></span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="编译生成动态链接库"><a href="#编译生成动态链接库" class="headerlink" title="编译生成动态链接库"></a>编译生成动态链接库</h2><p>编译 <code>myfunc.c</code> ：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -c -fPIC -o myfunc.o myfunc.c</span><br></pre></td></tr></table></figure>
+
+<p>参数解析：</p>
+<blockquote>
+<p><code>-c</code> 表示只编译 ( compile ) ，而不链接，输出目标文（ obj 文件）。<br><code>-o </code> 表示输出文件的文件名。<br><code>-fPIC</code> PIC 指 Position Independent Code ， 生成适合在共享库中使用的与位置无关的代码。编译成共享库要求此选项。适用于动态链接并避免对全局偏移表大小的任何限制。</p>
+</blockquote>
+<p>生成动态链接库文件 <code>libmyfunc.so</code> ：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -shared myfunc.o -o libmyfunc.so</span><br></pre></td></tr></table></figure>
+
+<p>参数解析：</p>
+<blockquote>
+<p><code>-share</code> 生成一个共享对象，可以与其他对象链接以形成可执行文件。</p>
+</blockquote>
+<p><strong>把上面两条命令合成一条就是：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -fPIC -shared myfunc.c -o libmyfunc.so</span><br></pre></td></tr></table></figure>
+
+<p><strong>其实动态链接库有其命名规则</strong>。举例 <code> libname.so.x.y.z</code> ：</p>
+<ul>
+<li><code>lib</code> ：<strong>统一前缀</strong>；</li>
+<li><code>name</code> ：<strong>动态链接库的名字</strong>， <code>libmyfunc.so</code> 中 <code>myfunc</code> 就是其动态链接库名；</li>
+<li><code>so</code> ：<strong>统一后缀</strong>；</li>
+<li><code>x</code> ：<strong>主版本号</strong>，表示该库有重大更新，不同版本号之间是不兼容的；</li>
+<li><code>y</code> ：<strong>次版本号</strong>，表示该库增量升级，在相同主版本号下，次版本号高的兼容次版本号低的库；</li>
+<li><code>z</code> ：<strong>发布版本号</strong>，表示该库的优化、 bugfix 等，相同主次版本号，不同发布版本号之间完全兼容。</li>
+</ul>
+<p>好了，上面的步骤就是如何编译生成动态链接库。下面我们继续来说说如何使用动态链接库。</p>
+<h2 id="使用动态链接库"><a href="#使用动态链接库" class="headerlink" title="使用动态链接库"></a>使用动态链接库</h2><p>接下来我们使用 <code>test.c</code> 来使用动态链接库。 <code>test.c</code> 内容如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;myfunc.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> <span class="keyword">const</span> *argv[])</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">int</span> result = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    say_hello();</span><br><span class="line">    result = cal_sum(<span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;%d\n&quot;</span>, result);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>编译命令</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">gcc -o test test.c -l myfunc -L .</span><br></pre></td></tr></table></figure>
+
+<p><strong>编译上述包含 <code>.h</code> 头文件的程序，GCC编译器需要知道头文件的位置</strong></p>
+<ul>
+<li>对于 <code>#include &lt;...&gt;</code> ，GCC编译器会在默认 include 搜索路径中寻找。</li>
+<li>对于 <code>#include &quot;...&quot;</code> ，GCC编译器会在当前路径搜索 <code>.h</code> 文件。当然你也可以使用 <code>-I</code> 选项提供额外的搜索路径，比如 <code>-I /home/test/</code> 。</li>
+</ul>
+<p><strong>除此之外，GCC编译器还需要知道我们用了哪个动态链接库文件，库文件在哪里</strong></p>
+<ul>
+<li>使用 <code>-l</code> 选项说明库文件的名字。这里，我们使用的是 <code>libmyfunc.so</code> 库文件，所以选项是这样写的： <code>-l myfunc</code> 。</li>
+<li>使用 <code>-L</code> 选项说明库文件的路径。这里，我们的库文件是在当前路径，所以选项是这样写的： <code>-L .</code> ，其中 <code>.</code> 表示当前路径。</li>
+</ul>
+<p><strong>附加：</strong><br>我们可以使用下面的命令来获知系统的 include 默认搜索路径:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> gcc -<span class="built_in">print</span>-prog-name=cc1 -v</span></span><br></pre></td></tr></table></figure>
+
+<p>获知库默认搜索路径:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> gcc -<span class="built_in">print</span>-search-dirs</span></span><br></pre></td></tr></table></figure>
+
+
+<h2 id="执行程序"><a href="#执行程序" class="headerlink" title="执行程序"></a>执行程序</h2><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./<span class="built_in">test</span></span></span><br></pre></td></tr></table></figure>
+
+<p>执行程序后出现这样的错误情况：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;test: error while loading shared libraries: libmyfunc.so: cannot open shared object file: No such file or directory</span><br></pre></td></tr></table></figure>
+
+<p><strong>这是因为执行程序的时候，系统不知道 <code>libmyfunc.so</code> 的位置，系统无法找到库文件</strong>。尽管我们用 GCC 编译的时候，通过 <code>-L</code> 选项提供了 <code>libmyfunc.so</code> 文件的位置。<strong>但是这个信息没有被写入到可执行程序里面</strong>。下面用命令 <code>ldd</code> 命令来查看一下 <code>test</code> 所依赖的库文件（ <code>ldd</code> 命令是用于显示可执行文件所依赖的库）：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ldd <span class="built_in">test</span></span></span><br><span class="line"></span><br><span class="line">    linux-vdso.so.1 =&gt;  (0x00007ffccc9fe000)</span><br><span class="line">    libmyfunc.so =&gt; not found</span><br><span class="line">    libc.so.6 =&gt; /lib/x86_64-linux-gnu/libc.so.6 (0x00007f0d31a44000)</span><br><span class="line">    /lib64/ld-linux-x86-64.so.2 (0x00007f0d31e0e000)</span><br></pre></td></tr></table></figure>
+
+<p><strong>可以看出可执行文件 <code>test</code> 无法找到 <code>libmyfunc.so</code> 库文件。</strong></p>
+<p><strong>解决办法有 4 个：</strong></p>
+<ol>
+<li><p><strong>将 <code>libmyfunc.so</code> 放到 GCC 默认搜索目录。</strong>比如 <code>/usr/lib/x86_64-linux-gnu</code> 或者 <code>/lib/x86_64-linux-gnu</code> 都可以，这样做简单粗暴。但是这样做需要 root 权限来完成。而且把第三方库文件直接放到系统库文件目录里，我感觉污染了整个系统（洁癖症）。</p>
+</li>
+<li><p><strong>在 <code>/etc/ld.so.conf.d</code> 目录下新建一个 <code>.conf</code> 文件。</strong>比如 <code>mylib.conf</code> ，在里面添加第三方库目录的绝对路径（比如 <code>libmyfunc.so</code> 所在目录的绝对路径）。</p>
+</li>
+<li><p><strong>设置 <code>LD_LIBRARY_PATH</code> 环境变量。</strong>比如 <code>export LD_LIBRARY_PATH=.</code> （ <code>.</code> 代表当前目录）。当设置这个环境变量后，操作系统将在 <code>LD_LIBRARY_PATH</code> 下搜索库文件，再到默认路径中搜索文件。<br>但是一旦退出 Terminal ，所设置的 <code>LD_LIBRARY_PATH</code> 环境变量就会消失。如果需要永久添加变量，需要将 <code>export LD_LIBRARY_PATH=/xxx/xxx:$LD_LIBRARY_PATH</code> 写入到 <code>~/.bashrc</code> 里面，其中 <code>/xxx/xxx</code> 是库文件所在目录的绝对路径。</p>
+</li>
+<li><p><strong>编译的时候添加 <code>-Wl,-rpath</code> 选项。</strong>比如 <code>gcc -o test test.c -l myfunc -L . -Wl,-rpath=.</code> 。 <code>-Wl</code> 选项告诉编译器将后面的参数传递给链接器</p>
+</li>
+</ol>
+<p><strong>重新编译和运行 <code>test</code></strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> gcc -o <span class="built_in">test</span> test.c -l myfunc -L . -Wl,-rpath=.</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> ./<span class="built_in">test</span></span></span><br><span class="line">hello world</span><br><span class="line">5</span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ol>
+<li><a target="_blank" rel="noopener" href="http://www.cnblogs.com/vamei/archive/2013/04/04/2998850.html">C 编译: 动态连接库 ( .so 文件)</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/jiqingwu/p/linux_dynamic_lib_create.html">Linux 动态库生成与使用指南</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.ibm.com/developerworks/cn/linux/l-dynamic-libraries/index.html">Linux 动态库剖析</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/ea9f4a6b136d">Linux 动态链接</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/homejim/p/8004883.html">运行时动态库：not found 及介绍 linux 的 -Wl,-rpath 命令</a></li>
+</ol>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Junyu Fan
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://fanjunyu.com/posts/62d7ab61/" title="Linux C 动态链接库的生成与使用">https://fanjunyu.com/posts/62d7ab61/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/C-C/" rel="tag"># C\C++</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/a6e6b99/" rel="prev" title="基于 OpenWrt 的 Git 服务搭建">
+      <i class="fa fa-chevron-left"></i> 基于 OpenWrt 的 Git 服务搭建
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E5%86%99%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93%E6%BA%90%E6%96%87%E4%BB%B6"><span class="nav-number">2.</span> <span class="nav-text">编写动态链接库源文件</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%BC%96%E8%AF%91%E7%94%9F%E6%88%90%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">3.</span> <span class="nav-text">编译生成动态链接库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%8A%A8%E6%80%81%E9%93%BE%E6%8E%A5%E5%BA%93"><span class="nav-number">4.</span> <span class="nav-text">使用动态链接库</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F"><span class="nav-number">5.</span> <span class="nav-text">执行程序</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Junyu Fan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Junyu Fan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hxca" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hxca" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:fanjunyuk@gmail.com" title="E-Mail → mailto:fanjunyuk@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://vinming.github.io/" title="https:&#x2F;&#x2F;vinming.github.io" rel="noopener" target="_blank">Stephen Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Junyu Fan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-pjax@0/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/velocity-animate@1/velocity.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/velocity-animate@1/velocity.ui.min.js"></script>
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/utils.js"></script>
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/motion.js"></script>
+
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/schemes/muse.js"></script>
+
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri === 'https://fanjunyu.com/posts/62d7ab61/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://https-hxca-github-io.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://fanjunyu.com/posts/62d7ab61/";
+    this.page.identifier = "posts/62d7ab61/";
+    this.page.title = "Linux C 动态链接库的生成与使用";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://https-hxca-github-io.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+    </div>
+</body>
+</html>
