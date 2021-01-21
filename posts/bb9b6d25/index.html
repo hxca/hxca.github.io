@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/css/main.css">
+
+
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/pace-js@1/themes/blue/pace-theme-minimal.css">
+  <script src="//cdn.jsdelivr.net/npm/pace-js@1/pace.min.js"></script>
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"fanjunyu.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"right","width":260,"display":"hide","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":"flat"},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":true,"lazyload":true,"pangu":true,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="前言在本地服务器安装 Anaconda 就可以跑深度学习运算。但是有时候我们的开发环境并不只有 Python，比如我们需要安装特定的版本 GCC 及其对应版本的依赖包。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="NVIDIA Docker 的安装和使用">
+<meta property="og:url" content="https://fanjunyu.com/posts/bb9b6d25/index.html">
+<meta property="og:site_name" content="Junyu Fan">
+<meta property="og:description" content="前言在本地服务器安装 Anaconda 就可以跑深度学习运算。但是有时候我们的开发环境并不只有 Python，比如我们需要安装特定的版本 GCC 及其对应版本的依赖包。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2021-01-20T14:14:01.000Z">
+<meta property="article:modified_time" content="2021-01-21T00:25:17.268Z">
+<meta property="article:author" content="Junyu Fan">
+<meta property="article:tag" content="Linux">
+<meta property="article:tag" content="Docker">
+<meta property="article:tag" content="NVIDIA">
+<meta property="article:tag" content="DeepLearn">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://fanjunyu.com/posts/bb9b6d25/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>NVIDIA Docker 的安装和使用 | Junyu Fan</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Junyu Fan</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://fanjunyu.com/posts/bb9b6d25/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.jpg">
+      <meta itemprop="name" content="Junyu Fan">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Junyu Fan">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          NVIDIA Docker 的安装和使用
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2021-01-20 22:14:01" itemprop="dateCreated datePublished" datetime="2021-01-20T22:14:01+08:00">2021-01-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2021-01-21 08:25:17" itemprop="dateModified" datetime="2021-01-21T08:25:17+08:00">2021-01-21</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93/" itemprop="url" rel="index"><span itemprop="name">技术经验总结</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/%E6%8A%80%E6%9C%AF%E7%BB%8F%E9%AA%8C%E6%80%BB%E7%BB%93/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
+                </span>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus: </span>
+    
+    <a title="disqus" href="/posts/bb9b6d25/#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="posts/bb9b6d25/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>在本地服务器安装 Anaconda 就可以跑深度学习运算。但是有时候我们的开发环境并不只有 Python，比如我们需要安装特定的版本 GCC 及其对应版本的依赖包。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。<a id="more"></a><br>多年 Linux 操作系统使用经验告诉我，系统越臃肿越不稳定，系统越是滥用 sudo 权限越不稳定。比如，在网上复制下来的命令，想都不想就用 sudo 权限安装一大堆连自己都不知道需不需要安装软件。又或者，在系统中某些配置文件可能为某次运算而特定配置的，然而在运算结束后忘记恢复了。这就很容易导致下次运算其他代码时，出现莫名奇妙的 BUG。还有，在安装大量的第三方 PPA 源后，在某次更新时出现的依赖问题。而依赖问题一般比较难解决，如果处理不好会让系统崩溃。<br>而 Docker 就可以很好的解决这些问题。你可以把它类比为虚拟机，但它比虚拟机更轻量，虚拟所带来的性能损失更低。在容器内（在虚拟机类比中就是一个虚拟系统）可以安装任意版本工具和依赖包，在配置开发环境过程中出现问题，直接删除容器即可。一个特定版本的开发环境对应着一个容器，互不干扰，更不影响宿主系统。容器与容器，容器与宿主系统完全隔离，这是非常理想的运算环境。<br>注意在安装 NVIDIA Docker 之前需要安装 NVIDIA 驱动。由于本地使用 Anaconda 时会自己安装 CUDA 至 conda 中，而 NVIDIA Docker 使用容器内的 CUDA，所以可以不用在本地安装。至于如何安装驱动我就不说，方法有很多种，反正又不是很难。</p>
+<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="docker-ce-安装"><a href="#docker-ce-安装" class="headerlink" title="docker-ce 安装"></a>docker-ce 安装</h3><p>Ubuntu 官方的源里面也有包含 docker，不过版本比较低，所以我们还是添加 docker 官方的 PPA 源来安装 <code>docker-ce</code>。</p>
+<p>首先安装支持 apt https 访问的依赖包。因为 docker 官方的 PPA 源是用 https 加密访问的。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get update</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install \</span></span><br><span class="line">    apt-transport-https \</span><br><span class="line">    ca-certificates \</span><br><span class="line">    curl \</span><br><span class="line">    gnupg-agent \</span><br><span class="line">    software-properties-common</span><br></pre></td></tr></table></figure>
+
+<p>添加PPA源的 GPG 秘钥 </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -</span></span><br></pre></td></tr></table></figure>
+
+<p>添加 <code>docker-ce</code> 的 PPA 源</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo add-apt-repository \</span></span><br><span class="line">   &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu \</span><br><span class="line"><span class="meta">   $</span><span class="bash">(lsb_release -cs) \</span></span><br><span class="line">   stable&quot;</span><br></pre></td></tr></table></figure>
+
+<p>安装 <code>docker-ce</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get update</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install docker-ce</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>为了方便快速安装 docker-ce ，将命令都写到一个脚本里：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line"></span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install \</span><br><span class="line">    apt-transport-https \</span><br><span class="line">    ca-certificates \</span><br><span class="line">    curl \</span><br><span class="line">    gnupg-agent \</span><br><span class="line">    software-properties-common</span><br><span class="line"></span><br><span class="line">curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -</span><br><span class="line">sudo add-apt-repository \</span><br><span class="line">   &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu \</span><br><span class="line"><span class="meta">   $</span><span class="bash">(lsb_release -cs) \</span></span><br><span class="line">   stable&quot;</span><br><span class="line"></span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install docker-ce</span><br></pre></td></tr></table></figure>
+
+<h3 id="nvidia-container-toolkit-安装"><a href="#nvidia-container-toolkit-安装" class="headerlink" title="nvidia-container-toolkit 安装"></a>nvidia-container-toolkit 安装</h3><p>nvidia-container-toolkit 的安装方法和 docker-ce 的类似，也是需要添加源，然后使用 <code>apt-get</code> 来安装。但是由于 DNS 污染问题，<code>nvidia.github.io</code> 域名会指向 <code>127.0.0.1</code> 导致安装失败。所以我们需要在 <code>/etc/hosts</code> 文件里添加下面的内容。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> NVIDIA DOCKER Domain IP</span></span><br><span class="line">185.199.108.153		nvidia.github.io</span><br><span class="line">185.199.109.153		nvidia.github.io</span><br><span class="line">185.199.110.153		nvidia.github.io</span><br><span class="line">185.199.111.153		nvidia.github.io</span><br></pre></td></tr></table></figure>
+
+<p>接下来配置并添加 nvidia-container-toolkit 源</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> distribution=$(. /etc/os-release;<span class="built_in">echo</span> <span class="variable">$ID</span><span class="variable">$VERSION_ID</span>) \</span></span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \</span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list</span><br></pre></td></tr></table></figure>
+
+<p>更新源并安装 nvidia-container-toolkit </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get update</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install nvidia-container-toolkit</span></span><br></pre></td></tr></table></figure>
+
+<p>重启 docker-ce</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo systemctl restart docker</span></span><br></pre></td></tr></table></figure>
+
+<p>验证 nvidia-container-toolkit 是否成功安装。如果输出 <code>nvidia-smi</code> 相关信息，那说明安装成功。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi</span></span><br><span class="line">Unable to find image &#x27;nvidia/cuda:11.0-base&#x27; locally</span><br><span class="line">11.0-base: Pulling from nvidia/cuda</span><br><span class="line">54ee1f796a1e: Pull complete </span><br><span class="line">f7bfea53ad12: Pull complete </span><br><span class="line">46d371e02073: Pull complete </span><br><span class="line">b66c17bbf772: Pull complete </span><br><span class="line">3642f1a6dfb3: Pull complete </span><br><span class="line">e5ce55b8b4b9: Pull complete </span><br><span class="line">155bc0332b0a: Pull complete </span><br><span class="line">Digest: sha256:774ca3d612de15213102c2dbbba55df44dc5cf9870ca2be6c6e9c627fa63d67a</span><br><span class="line">Status: Downloaded newer image for nvidia/cuda:11.0-base</span><br><span class="line">Wed Jan 20 20:36:14 2021       </span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| NVIDIA-SMI 460.32.03    Driver Version: 460.32.03    CUDA Version: 11.2     |</span><br><span class="line">|-------------------------------+----------------------+----------------------+</span><br><span class="line">| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |</span><br><span class="line">| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |</span><br><span class="line">|                               |                      |               MIG M. |</span><br><span class="line">|===============================+======================+======================|</span><br><span class="line">|   0  TITAN RTX           Off  | 00000000:18:00.0 Off |                  N/A |</span><br><span class="line">| 41%   55C    P2    64W / 280W |   5156MiB / 24220MiB |     28%      Default |</span><br><span class="line">|                               |                      |                  N/A |</span><br><span class="line">+-------------------------------+----------------------+----------------------+</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br><span class="line">| Processes:                                                                  |</span><br><span class="line">|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |</span><br><span class="line">|        ID   ID                                                   Usage      |</span><br><span class="line">|=============================================================================|</span><br><span class="line">+-----------------------------------------------------------------------------+</span><br></pre></td></tr></table></figure>
+
+<p>其中最后的参数 <code>nvidia/cuda:11.0-base</code> 是 NVIDIA 官方的镜像，需要根据工作站主机中实际安装的 CUDA 版本进行修改，版本可以用 <code>nvcc -V</code> 查看。</p>
+<p><strong>为了方便快速安装 nvidia-container-toolkit ，将命令都写到一个脚本里：</strong></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line">sudo cat &gt;&gt; /etc/hosts &lt;&lt;EOF</span><br><span class="line"><span class="meta">#</span><span class="bash"> NVIDIA DOCKER Domain IP</span></span><br><span class="line">185.199.108.153		nvidia.github.io</span><br><span class="line">185.199.109.153		nvidia.github.io</span><br><span class="line">185.199.110.153		nvidia.github.io</span><br><span class="line">185.199.111.153		nvidia.github.io</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \</span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add - \</span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list</span><br><span class="line"></span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt-get install nvidia-container-toolkit</span><br><span class="line"></span><br><span class="line">sudo systemctl restart docker</span><br><span class="line">sudo docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi</span><br></pre></td></tr></table></figure>
+
+<h2 id="使用命令"><a href="#使用命令" class="headerlink" title="使用命令"></a>使用命令</h2><h3 id="基本概念"><a href="#基本概念" class="headerlink" title="基本概念"></a>基本概念</h3><p>首先说一下 docker 的一些基本的概念。</p>
+<ul>
+<li>镜像（ docker image ）：Docker 镜像是一个特殊的文件系统，除了提供容器运行时所需的程序、库、资源、配置等文件外，还包含了一些为运行时准备的一些配置参数（如匿名卷、环境变量、用户等）。镜像不包含任何动态数据，其内容在构建之后也不会被改变。</li>
+<li>容器（ docker container ）：容器的实质是进程，但与直接在宿主执行的进程不同，容器进程运行于属于自己的独立的命名空间。因此容器可以拥有自己的 root 文件系统、自己的网络配置、自己的进程空间，甚至自己的用户 ID 空间。容器内的进程是运行在一个隔离的环境里，使用起来，就好像是在一个独立于宿主的系统下操作一样。<strong>容器与镜像的关系，就像是面向对象程序设计中的 <code>类</code> 和 <code>实例</code> 一样，镜像是静态的定义，容器是镜像运行时的实体。容器可以被创建、启动、停止、删除、暂停等。</strong></li>
+</ul>
+<p>下面来说一下基本的 docker 命令吧，学会这些命令可以涵盖很多使用场景了。</p>
+<h3 id="构建镜像"><a href="#构建镜像" class="headerlink" title="构建镜像"></a>构建镜像</h3><p>构建自己的 docker 镜像（也可以使用 Docker Hub 上面的镜像）</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> &lt;image-name&gt; 自己设定的镜像名字</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker build -t &lt;image-name&gt; .</span></span><br></pre></td></tr></table></figure>
+
+<p>查看和删除镜像</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看镜像。包括自己构建的镜像和在网上下载的镜像</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker image list</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除镜像。在 rm 后面指定 &lt;image-name&gt; 或者 &lt;image-id&gt;</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker image rm &lt;image-id&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="创建容器"><a href="#创建容器" class="headerlink" title="创建容器"></a>创建容器</h3><p>以 <code>image-name</code> 为镜像创建 docker container，并且进入容器执行 <code>bash</code> 命令。执行 <code>bash</code> 命令的意思是进入容器后使用 <code>bash</code> 为 <code>shell</code> 的命令处理器，如果一些镜像没有 <code>bash</code>， 可以将 <code>bash</code> 改为 <code>sh</code> </p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run -it &lt;image-name&gt; bash</span></span><br></pre></td></tr></table></figure>
+
+<p>创建容器时指定参数。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> -v：挂载卷</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 参数格式：-v /local_path:/container_path，local_path 为本地服务器的绝对目录，container_path 为容器的绝对目录 </span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run -it -v /path:/path &lt;image-name&gt; bash</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> -p：暴露容器端口</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 参数格式：-p local_port:container_port，local_port 为本地服务器的端口，container_port 为容器的端口</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run -it -v /path:/path -p xxxx:xxxx &lt;image-name&gt; bash</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> --name：指定容器的名字</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 参数格式：--name &lt;container-name&gt; 。如果多人共用一台服务器，最好指定容器的名字以便识别。</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo ocker run -it -v /path:/path -p xxxx:xxxx --name &lt;container-name&gt; &lt;image-name&gt; bash</span></span><br></pre></td></tr></table></figure>
+
+<p>查看和删除容器</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 查看容器</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker ps -a</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 删除容器。在 rm 后面指定 &lt;container-name&gt; 或者 &lt;container-id&gt;</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker rm &lt;container-id&gt;</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="容器操作"><a href="#容器操作" class="headerlink" title="容器操作"></a>容器操作</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 启动容器</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> docker start &lt;container-id&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 停止容器</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> docker stop &lt;container-id&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 重启容器</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> docker restart &lt;container-id&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 进入容器</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> <span class="built_in">exec</span> 命令是在启动容器后才可以使用</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> docker <span class="built_in">exec</span> -it &lt;container-id&gt; bash</span></span><br></pre></td></tr></table></figure>
+
+<h3 id="创建容器并启用-GPU"><a href="#创建容器并启用-GPU" class="headerlink" title="创建容器并启用 GPU"></a>创建容器并启用 GPU</h3><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> --gpus：开启并指定GPU</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> 参数格式：--gpus xxx</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 使用所有GPU</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> sudo docker run -it -v /path:/path -p xxxx:xxxx --name &lt;container-name&gt; --gpus all &lt;image-name&gt; bash</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run -it --gpus all nvidia/cuda:11.0-base nvidia-smi</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建容器时分配的 GPU 数量</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> sudo docker run -it -v /path:/path -p xxxx:xxxx --name &lt;container-name&gt; --gpus 2 &lt;image-name&gt; bash</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> docker run --gpus 2 nvidia/cuda:11.0-base nvidia-smi</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> 创建容器时指定 GPU</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> sudo docker run -it -v /path:/path -p xxxx:xxxx --name &lt;container-name&gt; --gpus <span class="string">&#x27;&quot;device=x,x&quot;&#x27;</span> &lt;image-name&gt; bash</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run --gpus <span class="string">&#x27;&quot;device=1,2&quot;&#x27;</span> nvidia/cuda:11.0-base nvidia-smi</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo docker run --gpus <span class="string">&#x27;&quot;device=UUID-ABCDEF,1&quot;&#x27;</span> nvidia/cuda:11.0-base nvidia-smi</span></span><br></pre></td></tr></table></figure>
+
+<p><strong>关于更多的 Docker 知识，可以查看教程地址：<a target="_blank" rel="noopener" href="https://yeasy.gitbook.io/docker_practice/">Docker 从入门到实践</a></strong></p>
+<h2 id="关于安装和使用的技巧"><a href="#关于安装和使用的技巧" class="headerlink" title="关于安装和使用的技巧"></a>关于安装和使用的技巧</h2><ul>
+<li><p>更简单的使用 docker<br>为了方便使用 <code>docker</code> 命令，可以将自己的账号添加到 <code>docker</code> 用户组。如此就不需要在每次使用 <code>docker</code> 命令之前添加 <code>sudo</code>。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> user 为自己的用户名。执行命令后，需要注销当前用户才正式生效。</span></span><br><span class="line">sudo usermod -aG docker user</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><code>install-nvidia-container-toolkit.sh</code><br>为了方便安装 docker-ce 和 nvidia-container-toolkit，把所有命令综合起来（需要 <code>root</code> 权限执行）。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash">!/bin/bash</span></span><br><span class="line"></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Add docker-ce to apt sources.list</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">apt-get update</span><br><span class="line">apt-get install \</span><br><span class="line">    apt-transport-https \</span><br><span class="line">    ca-certificates \</span><br><span class="line">    curl \</span><br><span class="line">    gnupg-agent \</span><br><span class="line">    software-properties-common</span><br><span class="line"></span><br><span class="line">curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -</span><br><span class="line">add-apt-repository \</span><br><span class="line">   &quot;deb [arch=amd64] https://download.docker.com/linux/ubuntu \</span><br><span class="line"><span class="meta">   $</span><span class="bash">(lsb_release -cs) \</span></span><br><span class="line">   stable&quot;</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> add nvidia-container-toolkit to apt sources.list</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">cat &gt;&gt; /etc/hosts &lt;&lt;EOF</span><br><span class="line"><span class="meta">#</span><span class="bash"> NVIDIA DOCKER Domain IP</span></span><br><span class="line">185.199.108.153		nvidia.github.io</span><br><span class="line">185.199.109.153		nvidia.github.io</span><br><span class="line">185.199.110.153		nvidia.github.io</span><br><span class="line">185.199.111.153		nvidia.github.io</span><br><span class="line">EOF</span><br><span class="line"></span><br><span class="line">distribution=$(. /etc/os-release;echo $ID$VERSION_ID) \</span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | apt-key add - \</span><br><span class="line">   &amp;&amp; curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | tee /etc/apt/sources.list.d/nvidia-docker.list</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Install docker-ce and nvidia-container-toolkit</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">apt-get update</span><br><span class="line">apt-get install docker-ce nvidia-container-toolkit</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span></span><br><span class="line"><span class="meta">#</span><span class="bash"> Test docker-ce and nvidia-container-toolkit</span></span><br><span class="line"><span class="meta">#</span></span><br><span class="line">systemctl restart docker</span><br><span class="line">docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>Miniconda Dockerfile<br><code>conda</code> 镜像的 Dockerfile 文件。镜像使用的是 <code>Miniconda</code>。与 <code>Anaconda</code> 相比，<code>Miniconda</code> 不带有深度学习框架和科学计算包，体积更小，更精简。构建容器后，可根据需要自行安装相关的 Python 包，使用命令与 <code>Anaconda</code> 无异。</p>
+<figure class="highlight dockerfile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">FROM</span> nvidia/cuda:<span class="number">10.2</span>-base</span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash">  sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list &amp;&amp; apt-get update; <span class="built_in">exit</span> 0</span></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> apt-get install -y vim wget curl cmake gcc &amp;&amp; apt-get clean</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> curl -o /root/miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh &amp;&amp; \</span></span><br><span class="line"><span class="bash">/bin/bash /root/miniconda.sh -b -p /miniconda &amp;&amp; rm -rvf /root/miniconda.sh</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">RUN</span><span class="bash"> /miniconda/bin/conda init</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">WORKDIR</span><span class="bash"> /root</span></span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>下面是构建 <code>Miniconda</code> 镜像的命令：<br>构建镜像时，最好新建一个文件夹，在文件夹内新建 Dockerfile 文件，并添加上面的内容，然后再执行下面的命令。注意确保文件夹内只有 Dockerfile 文件。否则在构建镜像时，docker 会自动缓存同文件夹内所有文件至容器里导致构建镜像时间比较长。</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> 镜像名为 minicnoda-base-image</span></span><br><span class="line">docker build -t minicnoda-base-image . </span><br></pre></td></tr></table></figure>
+
+<h2 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h2><ul>
+<li><a target="_blank" rel="noopener" href="https://docs.docker.com/engine/install/ubuntu/" title="docker 安装">Install Docker Engine on Ubuntu</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html">NVIDIA Docker Installation Guide</a></li>
+<li><a target="_blank" rel="noopener" href="https://yeasy.gitbook.io/docker_practice/">Docker 从入门到实践</a></li>
+</ul>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>Post author:  </strong>Junyu Fan
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://fanjunyu.com/posts/bb9b6d25/" title="NVIDIA Docker 的安装和使用">https://fanjunyu.com/posts/bb9b6d25/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" rel="noopener" target="_blank"><i class="fab fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Linux/" rel="tag"># Linux</a>
+              <a href="/tags/Docker/" rel="tag"># Docker</a>
+              <a href="/tags/NVIDIA/" rel="tag"># NVIDIA</a>
+              <a href="/tags/DeepLearn/" rel="tag"># DeepLearn</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/posts/62d7ab61/" rel="prev" title="Linux C 动态链接库的生成与使用">
+      <i class="fa fa-chevron-left"></i> Linux C 动态链接库的生成与使用
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    
+  <div class="comments">
+    <div id="disqus_thread">
+      <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+    </div>
+  </div>
+  
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%AE%89%E8%A3%85"><span class="nav-number">2.</span> <span class="nav-text">安装</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#docker-ce-%E5%AE%89%E8%A3%85"><span class="nav-number">2.1.</span> <span class="nav-text">docker-ce 安装</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#nvidia-container-toolkit-%E5%AE%89%E8%A3%85"><span class="nav-number">2.2.</span> <span class="nav-text">nvidia-container-toolkit 安装</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8%E5%91%BD%E4%BB%A4"><span class="nav-number">3.</span> <span class="nav-text">使用命令</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9F%BA%E6%9C%AC%E6%A6%82%E5%BF%B5"><span class="nav-number">3.1.</span> <span class="nav-text">基本概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9E%84%E5%BB%BA%E9%95%9C%E5%83%8F"><span class="nav-number">3.2.</span> <span class="nav-text">构建镜像</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%AE%B9%E5%99%A8"><span class="nav-number">3.3.</span> <span class="nav-text">创建容器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%AE%B9%E5%99%A8%E6%93%8D%E4%BD%9C"><span class="nav-number">3.4.</span> <span class="nav-text">容器操作</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%9B%E5%BB%BA%E5%AE%B9%E5%99%A8%E5%B9%B6%E5%90%AF%E7%94%A8-GPU"><span class="nav-number">3.5.</span> <span class="nav-text">创建容器并启用 GPU</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%85%B3%E4%BA%8E%E5%AE%89%E8%A3%85%E5%92%8C%E4%BD%BF%E7%94%A8%E7%9A%84%E6%8A%80%E5%B7%A7"><span class="nav-number">4.</span> <span class="nav-text">关于安装和使用的技巧</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">5.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Junyu Fan"
+      src="/images/avatar.jpg">
+  <p class="site-author-name" itemprop="name">Junyu Fan</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/hxca" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;hxca" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:fanjunyuk@gmail.com" title="E-Mail → mailto:fanjunyuk@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+  <div class="links-of-blogroll motion-element">
+    <div class="links-of-blogroll-title"><i class="fa fa-link fa-fw"></i>
+      Links
+    </div>
+    <ul class="links-of-blogroll-list">
+        <li class="links-of-blogroll-item">
+          <a href="https://vinming.github.io/" title="https:&#x2F;&#x2F;vinming.github.io" rel="noopener" target="_blank">Stephen Blog</a>
+        </li>
+    </ul>
+  </div>
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Junyu Fan</span>
+</div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="//cdn.jsdelivr.net/npm/animejs@3.1.0/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/theme-next/theme-next-pjax@0/pjax.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/medium-zoom@1/dist/medium-zoom.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/lozad@1/dist/lozad.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/pangu@4/dist/browser/pangu.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/velocity-animate@1/velocity.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/velocity-animate@1/velocity.ui.min.js"></script>
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/utils.js"></script>
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/motion.js"></script>
+
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/schemes/muse.js"></script>
+
+
+<script src="//cdn.jsdelivr.net/gh/hxca/hxca.github.io@master/js/next-boot.js"></script>
+
+  <script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '#page-configurations',
+    '.content-wrap',
+    '.post-toc-wrap',
+    '.languages',
+    '#pjax'
+  ],
+  switches: {
+    '.post-toc-wrap': Pjax.switches.innerHTML
+  },
+  analytics: false,
+  cacheBust: false,
+  scrollTo : !CONFIG.bookmark.enable
+});
+
+window.addEventListener('pjax:success', () => {
+  document.querySelectorAll('script[data-pjax], script#page-configurations, #pjax script').forEach(element => {
+    var code = element.text || element.textContent || element.innerHTML || '';
+    var parent = element.parentNode;
+    parent.removeChild(element);
+    var script = document.createElement('script');
+    if (element.id) {
+      script.id = element.id;
+    }
+    if (element.className) {
+      script.className = element.className;
+    }
+    if (element.type) {
+      script.type = element.type;
+    }
+    if (element.src) {
+      script.src = element.src;
+      // Force synchronous loading of peripheral JS.
+      script.async = false;
+    }
+    if (element.dataset.pjax !== undefined) {
+      script.dataset.pjax = '';
+    }
+    if (code !== '') {
+      script.appendChild(document.createTextNode(code));
+    }
+    parent.appendChild(script);
+  });
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <div id="pjax">
+  
+
+  
+
+  
+  <script src="//cdn.jsdelivr.net/npm/quicklink@1/dist/quicklink.umd.js"></script>
+  <script>
+      window.addEventListener('load', () => {
+      quicklink({
+        timeout : 3000,
+        priority: true,
+        ignores : [uri => uri.includes('#'),uri => uri === 'https://fanjunyu.com/posts/bb9b6d25/',]
+      });
+      });
+  </script>
+
+<script>
+  function loadCount() {
+    var d = document, s = d.createElement('script');
+    s.src = 'https://https-hxca-github-io.disqus.com/count.js';
+    s.id = 'dsq-count-scr';
+    (d.head || d.body).appendChild(s);
+  }
+  // defer loading until the whole page loading is completed
+  window.addEventListener('load', loadCount, false);
+</script>
+<script>
+  var disqus_config = function() {
+    this.page.url = "https://fanjunyu.com/posts/bb9b6d25/";
+    this.page.identifier = "posts/bb9b6d25/";
+    this.page.title = "NVIDIA Docker 的安装和使用";
+    };
+  NexT.utils.loadComments(document.querySelector('#disqus_thread'), () => {
+    if (window.DISQUS) {
+      DISQUS.reset({
+        reload: true,
+        config: disqus_config
+      });
+    } else {
+      var d = document, s = d.createElement('script');
+      s.src = 'https://https-hxca-github-io.disqus.com/embed.js';
+      s.setAttribute('data-timestamp', '' + +new Date());
+      (d.head || d.body).appendChild(s);
+    }
+  });
+</script>
+
+    </div>
+</body>
+</html>
