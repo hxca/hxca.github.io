@@ -30,7 +30,7 @@
 <meta property="og:description" content="前言虽然在本地服务器安装 Anaconda 就可以跑深度学习运算，但是有时候我们的开发环境并不只有 Python。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2021-01-20T14:14:01.000Z">
-<meta property="article:modified_time" content="2021-01-21T12:16:48.150Z">
+<meta property="article:modified_time" content="2021-01-23T08:56:23.855Z">
 <meta property="article:author" content="Junyu Fan">
 <meta property="article:tag" content="Linux">
 <meta property="article:tag" content="Docker">
@@ -201,7 +201,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2021-01-21 20:16:48" itemprop="dateModified" datetime="2021-01-21T20:16:48+08:00">2021-01-21</time>
+                <time title="Modified: 2021-01-23 16:56:23" itemprop="dateModified" datetime="2021-01-23T16:56:23+08:00">2021-01-23</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -242,7 +242,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>虽然在本地服务器安装 Anaconda 就可以跑深度学习运算，但是有时候我们的开发环境并不只有 Python。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。<a id="more"></a><br>多年的 Linux 操作系统使用经验告诉我，系统越臃肿越不稳定，系统越是滥用 sudo 权限越容易出问题。举个例子，在网上复制下来的命令，想都不想就用 sudo 权限安装一大堆连自己都不知道需不需要安装软件。又或者，在系统中某些配置文件可能为某次运算而特定配置的，然而在运算结束后忘记恢复了。这就很容易导致下次运算其他代码时，出现莫名奇妙的 BUG。还有，在安装大量的第三方 PPA 源后，在某次更新时出现的依赖问题。而依赖问题一般比较难解决，如果处理不好会让系统崩溃。<br>而 Docker 就可以很好的解决这些问题。你可以把它类比为虚拟机，但它比虚拟机更轻量，虚拟所带来的性能损失更低。在容器内（在虚拟机类比中就是一个虚拟系统）可以安装任意版本工具和依赖包，在配置开发环境过程中出现问题，直接删除容器即可。一个特定版本的开发环境对应着一个容器，互不干扰，更不影响宿主系统。容器与容器，容器与宿主系统完全隔离，这是非常理想的运算环境。<br>注意在安装 NVIDIA Docker 之前需要安装 NVIDIA 驱动。由于本地服务器的 Anaconda 集成 CUDA 至 conda 中，而 NVIDIA Docker 使用容器内的 CUDA，所以可以不用在本地安装。至于如何安装驱动我就不说，方法有很多种，反正又不是很难。</p>
+        <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>虽然在本地服务器安装 Anaconda 就可以跑深度学习运算，但是有时候我们的开发环境并不只有 Python。如果我们要复现论文中的模型或者 Github 上的代码时，我们可能需要按照它的要求安装指定版本的 GCC 及其它特定版本的开发包。久而久之，系统就会变得臃肿。<a id="more"></a><br>多年的 Linux 操作系统使用经验告诉我，系统越臃肿越不稳定，系统越是滥用 sudo 权限越容易出问题。举个例子，在网上复制下来的命令，想都不想就用 sudo 权限安装一大堆连自己都不知道需不需要安装软件。又或者，在系统中某些配置文件可能为某次运算而特定配置的，然而在运算结束后忘记恢复了。这就很容易导致下次运算其他代码时，出现莫名奇妙的 BUG。还有，在安装大量的第三方 PPA 源后，在某次更新时出现的依赖问题。而依赖问题一般比较难解决，如果处理不好会让系统崩溃。<br>而 Docker 就可以很好的解决这些问题。你可以把它类比为虚拟机，但它比虚拟机更轻量，虚拟所带来的性能损失更低。在容器内（在虚拟机类比中就是一个虚拟系统）可以安装任意版本工具和依赖包，在配置开发环境过程中出现问题，直接删除容器即可。<br>注意在安装 NVIDIA Docker 之前需要安装 NVIDIA 驱动。由于本地服务器的 Anaconda 集成 CUDA 至 conda 中，而 NVIDIA Docker 使用容器内的 CUDA，所以可以不用在本地安装。至于如何安装驱动我就不说，方法有很多种，反正又不是很难。</p>
 <h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><h3 id="docker-ce-安装"><a href="#docker-ce-安装" class="headerlink" title="docker-ce 安装"></a>docker-ce 安装</h3><p>Ubuntu 官方的源里面也有包含 docker，不过版本比较低，所以我们还是添加 docker 官方的 PPA 源来安装 <code>docker-ce</code>。</p>
 <p>首先安装支持 apt https 访问的依赖包。因为 docker 官方的 PPA 源是用 https 加密访问的。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get update</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo apt-get install \</span></span><br><span class="line">    apt-transport-https \</span><br><span class="line">    ca-certificates \</span><br><span class="line">    curl \</span><br><span class="line">    gnupg-agent \</span><br><span class="line">    software-properties-common</span><br></pre></td></tr></table></figure>
