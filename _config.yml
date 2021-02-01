@@ -113,4 +113,4 @@ theme: next
 deploy:
   type: git
   repository: git@github.com:hxca/hxca.github.io.git
-  branch: master
+  branch: main
